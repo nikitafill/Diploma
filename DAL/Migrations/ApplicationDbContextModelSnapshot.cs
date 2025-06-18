@@ -21,7 +21,7 @@ namespace DiplomaProject.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DiplomaProject.DAL.Models.Experiment", b =>
+            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentGroup", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -29,8 +29,15 @@ namespace DiplomaProject.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ExperimentDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("FramesDirectory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceName")
+                        .HasColumnType("text");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -39,66 +46,7 @@ namespace DiplomaProject.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Experiments");
-                });
-
-            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentParameters", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ExperimentId")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("Pressure")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Radius")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("RefractiveIndex")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Wavelength")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExperimentId")
-                        .IsUnique();
-
-                    b.ToTable("ExperimentParameters");
-                });
-
-            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentResult", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CalculationData")
-                        .HasColumnType("text");
-
-                    b.Property<int>("ExperimentId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxRingCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RingPatternImage")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExperimentId")
-                        .IsUnique();
-
-                    b.ToTable("ExperimentResults");
+                    b.ToTable("ExperimentGroups");
                 });
 
             modelBuilder.Entity("DiplomaProject.DAL.Models.Question", b =>
@@ -118,7 +66,7 @@ namespace DiplomaProject.Migrations
                     b.ToTable("Questions");
                 });
 
-            modelBuilder.Entity("DiplomaProject.DAL.Models.Report", b =>
+            modelBuilder.Entity("DiplomaProject.DAL.Models.RingRadius", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -126,22 +74,17 @@ namespace DiplomaProject.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<float>("RadiusCm")
+                        .HasColumnType("real");
 
-                    b.Property<int>("ExperimentId")
+                    b.Property<int>("VideoAnalysisId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("ReportText")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExperimentId")
-                        .IsUnique();
+                    b.HasIndex("VideoAnalysisId");
 
-                    b.ToTable("Reports");
+                    b.ToTable("RingsRadiuses");
                 });
 
             modelBuilder.Entity("DiplomaProject.DAL.Models.StudentAnswer", b =>
@@ -164,8 +107,6 @@ namespace DiplomaProject.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExperimentId");
-
                     b.HasIndex("QuestionId");
 
                     b.ToTable("StudentAnswers");
@@ -179,17 +120,17 @@ namespace DiplomaProject.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("GroupName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("Login")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -204,10 +145,44 @@ namespace DiplomaProject.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("DiplomaProject.DAL.Models.Experiment", b =>
+            modelBuilder.Entity("DiplomaProject.DAL.Models.VideoAnalysis", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<float>("CentreX")
+                        .HasColumnType("real");
+
+                    b.Property<float>("CentreY")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExtractedFramePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<float>("PixelsPerCm")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("VideoAnalyses");
+                });
+
+            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentGroup", b =>
                 {
                     b.HasOne("DiplomaProject.DAL.Models.User", "User")
-                        .WithMany("Experiments")
+                        .WithMany("ExperimentGroups")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -215,72 +190,52 @@ namespace DiplomaProject.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentParameters", b =>
+            modelBuilder.Entity("DiplomaProject.DAL.Models.RingRadius", b =>
                 {
-                    b.HasOne("DiplomaProject.DAL.Models.Experiment", "Experiment")
-                        .WithOne("Parameters")
-                        .HasForeignKey("DiplomaProject.DAL.Models.ExperimentParameters", "ExperimentId")
+                    b.HasOne("DiplomaProject.DAL.Models.VideoAnalysis", "VideoAnalysis")
+                        .WithMany("Radii")
+                        .HasForeignKey("VideoAnalysisId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Experiment");
-                });
-
-            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentResult", b =>
-                {
-                    b.HasOne("DiplomaProject.DAL.Models.Experiment", "Experiment")
-                        .WithOne("Result")
-                        .HasForeignKey("DiplomaProject.DAL.Models.ExperimentResult", "ExperimentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Experiment");
-                });
-
-            modelBuilder.Entity("DiplomaProject.DAL.Models.Report", b =>
-                {
-                    b.HasOne("DiplomaProject.DAL.Models.Experiment", "Experiment")
-                        .WithOne("Report")
-                        .HasForeignKey("DiplomaProject.DAL.Models.Report", "ExperimentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Experiment");
+                    b.Navigation("VideoAnalysis");
                 });
 
             modelBuilder.Entity("DiplomaProject.DAL.Models.StudentAnswer", b =>
                 {
-                    b.HasOne("DiplomaProject.DAL.Models.Experiment", "Experiment")
-                        .WithMany("Answers")
-                        .HasForeignKey("ExperimentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DiplomaProject.DAL.Models.Question", "Question")
                         .WithMany()
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Experiment");
-
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("DiplomaProject.DAL.Models.Experiment", b =>
+            modelBuilder.Entity("DiplomaProject.DAL.Models.VideoAnalysis", b =>
                 {
-                    b.Navigation("Answers");
+                    b.HasOne("DiplomaProject.DAL.Models.ExperimentGroup", "Group")
+                        .WithMany("Experiments")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Parameters");
+                    b.Navigation("Group");
+                });
 
-                    b.Navigation("Report");
-
-                    b.Navigation("Result");
+            modelBuilder.Entity("DiplomaProject.DAL.Models.ExperimentGroup", b =>
+                {
+                    b.Navigation("Experiments");
                 });
 
             modelBuilder.Entity("DiplomaProject.DAL.Models.User", b =>
                 {
-                    b.Navigation("Experiments");
+                    b.Navigation("ExperimentGroups");
+                });
+
+            modelBuilder.Entity("DiplomaProject.DAL.Models.VideoAnalysis", b =>
+                {
+                    b.Navigation("Radii");
                 });
 #pragma warning restore 612, 618
         }

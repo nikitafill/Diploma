@@ -1,0 +1,90 @@
+﻿@page
+@model DiplomaProject.Pages.AuthModel
+@{
+    ViewData["Title"] = "Авторизация";
+}
+
+<div class="login-container">
+    <form id="loginForm" class="login-form">
+        <h2>Авторизация</h2>
+
+        <label for="login">Логин</label>
+        <input type="text" name="login" placeholder="Логин" required />
+
+        <label for="password">Пароль</label>
+        <input type="password" name="password" placeholder="Пароль" required />
+
+        <button type="submit">Войти</button>
+    </form>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 100px;
+    }
+
+    .login-form {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 20px;
+        width: 600px; /* Ширина формы */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-form h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .login-form label {
+        margin-top: 10px;
+    }
+
+    .login-form input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+    .login-form button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .login-form button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const login = e.target.login.value;
+        const password = e.target.password.value;
+
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password }),
+            credentials: 'include'
+        });
+
+        if (res.ok) {
+            const user = await res.json();
+            window.location.href = '/Main';
+        } else {
+            alert('Неверный логин или пароль');
+        }
+    });
+</script>

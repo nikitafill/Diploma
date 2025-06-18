@@ -9,7 +9,7 @@ namespace DiplomaProject.DAL.Repositories
 
         public async Task<IEnumerable<StudentAnswer>> GetByExperimentIdAsync(int experimentId)
         {
-            return await _dbSet.Where(a => a.ExperimentId == experimentId).ToListAsync();
+            return await _dbSet.Where(a => a.ExperimentGroupId == experimentId).ToListAsync();
         }
     }
 }

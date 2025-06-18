@@ -14,10 +14,10 @@ namespace DiplomaProject.DAL.Models
         public int Id { get; set; }
 
         [Required]
-        public int ExperimentId { get; set; }
+        public int ExperimentGroupId { get; set; }
 
-        [ForeignKey("ExperimentId")]
-        public Experiment Experiment { get; set; } = null!;
+        [ForeignKey("ExperimentGroupId")]
+        public  ExperimentGroup ExperimentGroup { get; set; }
 
         [Required]
         public int QuestionId { get; set; }

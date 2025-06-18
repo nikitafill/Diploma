@@ -2,8 +2,14 @@
 
 namespace DiplomaProject.DAL.Repositories.Interfaces
 {
-    public interface IExperimentRepository : IGenericRepository<Experiment>
+    public interface IExperimentRepository
     {
-        Task<IEnumerable<Experiment>> GetByUserIdAsync(int userId);
+        Task<VideoAnalysis> GetAsync(int id);
+        Task<List<VideoAnalysis>> GetAllAsync();
+        Task AddAsync(VideoAnalysis analysis);
+        Task SaveChangesAsync();
+        Task AddGroupAsync(ExperimentGroup group);
+        Task<List<VideoAnalysis>> GetExperimentsByGroupAsync(int groupId);
     }
+
 }

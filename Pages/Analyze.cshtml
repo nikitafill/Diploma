@@ -1,0 +1,421 @@
+﻿@page
+@using System.Text.Json
+@model AnalyzeModel
+@{
+    var currentIndex = Model.GroupExperimentsIds.IndexOf(Model.Id) + 1; 
+    var totalExperiments = Model.GroupExperimentsIds.Count;
+    ViewData["Title"] = $"Эксперимент {currentIndex} из {totalExperiments}";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (!string.IsNullOrEmpty(Model.ExtractedFrameUrl))
+{
+    <div>
+        <p>
+            1. Установите центр. Для этого кликните 1 раз по изображению.<br />
+            2. Установите масштаб в 10 делений. Для этого кликните 2 раза по изображению.<br />
+            3. Измерьте радиусы колец. Для этого кликайте попарно от центра до края кольца.<br />
+            4. Нажмите кноку "Подтвердить". Если вы ошиблись, то нажмите кнопку "Сбросить" и повторите шаги.<br />
+        </p>
+    </div>
+    <div style="position: relative; display: inline-block;">
+        <img id="frameImage" src="@Model.ExtractedFrameUrl" style="max-width: 100%; display: block;" />
+        <canvas id="rulerCanvas" style="position: absolute; left: 0; top: 0;"></canvas>
+    </div>
+    <br />
+    <form id="radiiForm" method="post" enctype="application/x-www-form-urlencoded">
+        <input type="hidden" name="CentreX" id="centreXInput" />
+        <input type="hidden" name="CentreY" id="centreYInput" />
+        <input type="hidden" name="PixelsPerCm" id="pixelsPerCmInput" />
+        <input type="hidden" name="ExtractedFrameUrl" value="@Model.ExtractedFrameUrl" />
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div id="radiiInputsContainer"></div>
+        <button type="button" onclick="submitRadii()">Подтвердить</button>
+        <button type="button">Сбросить</button>
+    </form>
+}
+else
+{
+    <p>Кадр не загружен.</p>
+}
+@if (Model.RadiiFromDb?.Any() == true)
+{
+    <h4>Сохранённые радиусы</h4>
+    <div style="display:flex; justify-content: space-between; align-items: stretch; width: 100%;">
+        <table class="table table-bordered" style="flex: 1; margin-right: 10px;">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Радиус (в мм)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.RadiiFromDb.Count; i++)
+                {
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td>@Model.RadiiFromDb[i].ToString("F2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div style="flex: 1;">
+            <canvas id="radiusChart" style="width: 100%; height: 100%;"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const radii = @Html.Raw(JsonSerializer.Serialize(Model.RadiiFromDb));
+        const mValues = radii.map((_, index) => index + 1);
+        const rSquared = radii.map(r => +(r * r).toFixed(2));
+        const ctxRadius = document.getElementById('radiusChart').getContext('2d');
+        new Chart(ctxRadius, {
+            type: 'line',
+            data: {
+                labels: mValues,
+                datasets: [{
+                    label: 'r² vs m',
+                    data: rSquared,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'График зависимости r² от m'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Номер кольца (m)'
+                        },
+                        min: 0
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'r² (мм²)'
+                        },
+                        min: 0
+                    }
+                }
+            }
+        });
+    </script>
+}
+<div style="flex: 1;">
+    <canvas id="intensityChart2" style="width: 100%; height: 300px;"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const data = @Html.Raw(Model.IntensityProfileJson);
+        const ctxIntensity2 = document.getElementById('intensityChart2').getContext('2d');
+        const chart = new Chart(ctxIntensity2, {
+            type: 'line',
+            data: {
+                labels: data.map((_, i) => i),
+                datasets: [{
+                    label: 'Интенсивность света',
+                    data: data,
+                    borderColor: 'blue',
+                    borderWidth: 1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Интенсивность света по RGB'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Пиксель (X)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</div>
+@{
+    var wavelength = Model.WavelengthNm ?? 550.0f;
+    var i0 = Model.I0 ?? 1.0f;
+}
+@if (Model.RadiiFromDb?.Any() == true)
+{
+
+    <h4>Расчёт радиуса кривизны линзы</h4>
+    <form method="post" asp-page-handler="CalculateLensRadius">
+        <div style="display: grid; width:20%">
+            <label>Введите длину волны (нм):</label>
+            <input type="number" step="0.01" name="WavelengthNm" value="@wavelength" required />
+
+            <label>I0:</label>
+            <input type="number" step="0.01" name="I0" value="@i0" required />
+
+            <input type="hidden" name="Id" value="@Model.Id" />
+        </div>
+        <button type="submit">Рассчитать</button>
+    </form>
+    @if (Model.LensRadius.HasValue)
+    {
+        <p><strong>Расчётный радиус кривизны линзы:</strong> @Model.LensRadius.Value.ToString("F10") мм</p>
+    }
+}
+@if (Model.Intensities?.Any() == true)
+{
+    <h4>Интенсивности света</h4>
+    <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%;">
+        <!-- Обертка для прокрутки таблицы -->
+        <div style="flex: 1; margin-right: 10px; max-height: 300px; overflow-y: auto;">
+            <table class="table table-bordered">
+                <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                    <tr>
+                        <th>Радиус (в мм)</th>
+                        <th>Интенсивность</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.RadiiJson.Length; i++)  // Убираем ограничение на 5 элементов
+                    {
+                        <tr>
+                            <td>@Model.RadiiJson[i].ToString("F3")</td>
+                            <td>@Model.IntensitiesJson[i].ToString("F3")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- График -->
+        <div style="flex: 1;">
+            <canvas id="intensityChart1" style="width: 100%; height: 100%;"></canvas>
+            <script>
+                let radii2 = @Html.Raw(JsonSerializer.Serialize(Model.RadiiJson));
+                let intens = @Html.Raw(JsonSerializer.Serialize(Model.IntensitiesJson));
+
+                // Округление значений до тысячных
+                radii2 = radii2.map(r => +r.toFixed(3));
+                intens = intens.map(i => +i.toFixed(3));
+
+                const ctxIntensity1 = document.getElementById('intensityChart1').getContext('2d');
+
+                new Chart(ctxIntensity1, {
+                    type: 'line',
+                    data: {
+                        labels: radii2,
+                        datasets: [{
+                            label: 'Интенсивность света',
+                            data: intens,
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'График зависимости интенсивности от радиуса'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(3)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Радиус (мм)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Интенсивность'
+                                },
+                                ticks: {
+                                    callback: function (value) {
+                                        return +value.toFixed(3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            </script>
+        </div>
+
+    </div>
+}
+
+<div class="d-flex justify-content-between mb-3 list-unstyled">
+    @if (Model.PrevId.HasValue)
+    {
+        <a class="btn btn-outline-primary"
+           asp-page="./Analyze"
+           asp-route-id="@Model.PrevId.Value"
+           asp-route-groupId="@Model.GroupId">
+            ← Предыдущий
+        </a>
+    }
+
+    <a class="btn btn-secondary" asp-page="./Index" asp-route-groupId="@Model.GroupId">
+        К списку группы
+    </a>
+
+    @if (Model.NextId.HasValue)
+    {
+        <a class="btn btn-outline-primary"
+           asp-page="./Analyze"
+           asp-route-id="@Model.NextId.Value"
+           asp-route-groupId="@Model.GroupId">
+            Следующий →
+        </a>
+    }
+</div>
+@section Scripts {
+    <script>
+        let formChanged = false;
+
+        window.addEventListener('beforeunload', function (e) {
+            if (scalePoints.length > 0 || radiusLines.length > 0 || centreX != null) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+        let pixelsPerCm = null;
+        let centreX = null;
+        let centreY = null;
+        let scalePoints = [];
+        let radiusLines = [];
+        const canvas = document.getElementById('rulerCanvas');
+        const img = document.getElementById('frameImage');
+        const ctx = canvas.getContext('2d');
+        img.onload = function () {
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.style.width = img.clientWidth + "px";
+            canvas.style.height = img.clientHeight + "px";
+            draw();
+        };
+        if (img.complete) {
+            img.onload();
+        }
+        canvas.addEventListener('click', function (e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = img.naturalWidth / img.clientWidth;
+            const scaleY = img.naturalHeight / img.clientHeight;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            if (centreX == null || centreY == null) {
+                centreX = x;
+                centreY = y;
+                // Добавим элемент, чтобы показать координаты центра, если его ещё нет:
+                let coordsDisplay = document.getElementById("centreCoords");
+                if (!coordsDisplay) {
+                    coordsDisplay = document.createElement("p");
+                    coordsDisplay.id = "centreCoords";
+                    canvas.parentElement.appendChild(coordsDisplay);
+                }
+                coordsDisplay.textContent = `Центр: (${centreX.toFixed(2)}, ${centreY.toFixed(2)})`;
+                draw();
+                return; // Прерываем, чтобы второй код не выполнился в первый клик
+            }
+            if (scalePoints.length < 2) {
+                scalePoints.push({ x, y });
+                if (scalePoints.length === 2) {
+                    const dx = scalePoints[1].x - scalePoints[0].x;
+                    const dy = scalePoints[1].y - scalePoints[0].y;
+                    pixelsPerCm = Math.sqrt(dx * dx + dy * dy);
+                    alert(`Масштаб установлен: 1 см = ${pixelsPerCm.toFixed(2)} пикселей`);
+                }
+            } else {
+                radiusLines.push({ x, y });
+            }
+            draw();
+        });
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            if (centreX != null && centreY != null) {
+                drawPoint({ x: centreX, y: centreY }, 'black');
+            }
+
+            if (scalePoints.length === 1) {
+                drawPoint(scalePoints[0], 'blue');
+            } else if (scalePoints.length === 2) {
+                drawLine(scalePoints[0], scalePoints[1], 'blue');
+            }
+
+            for (let i = 0; i + 1 < radiusLines.length; i += 2) {
+                drawLine(radiusLines[i], radiusLines[i + 1], 'green');
+            }
+        }
+        function drawPoint(p, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        function drawLine(p1, p2, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        function submitRadii() {
+            if (!pixelsPerCm || radiusLines.length < 2 || radiusLines.length % 2 !== 0) {
+                alert("Нарисуйте масштаб и хотя бы один радиус (2 точки).");
+                return;
+            }
+            const radii = [];
+            for (let i = 0; i < radiusLines.length; i += 2) {
+                const dx = radiusLines[i + 1].x - radiusLines[i].x;
+                const dy = radiusLines[i + 1].y - radiusLines[i].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                radii.push(dist);
+            }
+            radii.sort((a, b) => a - b);
+            const container = document.getElementById("radiiInputsContainer");
+            container.innerHTML = "";
+            radii.forEach((r, index) => {
+                const input = document.createElement("input");
+
+                input.type = "hidden";
+                input.name = "radiiPixels";
+                input.value = r;
+                container.appendChild(input);
+            });
+            document.getElementById("pixelsPerCmInput").value = pixelsPerCm;
+            document.getElementById("centreXInput").value = centreX;
+            document.getElementById("centreYInput").value = centreY;
+            document.getElementById("pixelsPerCmInput").value = pixelsPerCm;
+            document.getElementById("radiiForm").submit();
+        }
+    </script>
+}

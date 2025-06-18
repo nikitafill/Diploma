@@ -8,9 +8,9 @@ namespace DiplomaProject.DAL.Repositories
     {
         public UserRepository(ApplicationDbContext context) : base(context) { }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<User?> GetByLoginAsync(string login)
         {
-            return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Login == login);
         }
     }
 }

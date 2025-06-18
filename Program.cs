@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using DiplomaProject.API.Extentions;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace DiplomaProject
 {
@@ -9,46 +11,61 @@ namespace DiplomaProject
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            var cultureInfo = new CultureInfo("en-US");
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
             builder.Services.AddControllersWithViews();
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("ConnectionsString")));
-            //builder.Services.AddIdentitySupport();
-            //builder.Services.AddAuthenticationBearer(builder.Configuration);
-            /*builder.Services.RegisterBLLDependencies();*/
+            builder.Services.RegisterBLLDependencies();
             builder.Services.RegisterDALDependencies();
-            //builder.Services.AddMapper();
             builder.Services.AddRazorPages();
+            builder.Services.AddHttpClient();
 
+            builder.Services.AddAuthentication("MyCookieAuth")
+                .AddCookie("MyCookieAuth", options =>
+                {
+                    options.LoginPath = "/Auth"; 
+                    options.ExpireTimeSpan = TimeSpan.FromHours(1);
+                    options.SlidingExpiration = true;
+                });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("StudentOnly", policy => policy.RequireRole("Студент"));
+                options.AddPolicy("TeacherOnly", policy => policy.RequireRole("Преподаватель"));
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
             app.UseRouting();
+
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller}/{action=Index}/{id?}");
+                pattern: "{controller}/{action=Index}/{id?}"); //Index
+
+            app.UseAuthentication(); 
+            app.UseAuthorization();
             app.MapRazorPages();
             app.MapControllers();
-
-
-            app.MapFallbackToFile("index.html");
-
+            app.UseStaticFiles();
+            app.MapFallbackToFile("Index.html");
             app.UseSwagger();
             app.UseSwaggerUI();
-
             app.Run();
         }
     }

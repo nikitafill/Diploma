@@ -1,10 +1,161 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Извлечение кадра";
 }
+<h2>@Model.GroupName</h2>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label>Выберите видеофайл:</label>
+        <input type="file" asp-for="VideoFile" class="form-control" accept="video/*" onchange="previewVideo(event)" />
+    </div>
+    <div class="mb-3" id="videoPreviewContainer" style="display: none;">
+        <label>Предпросмотр видео:</label>
+        <video id="videoPreview" controls width="100%" class="border rounded"></video>
+    </div>
+
+    <div class="mb-3">
+        <label>Начальная точка (в секундах):</label>
+        <input type="number" asp-for="StartTime" class="form-control"/>
+    </div>
+
+    <div class="mb-3">
+        <label>Шаг между кадрами (секунды):</label>
+        <input type="number" asp-for="TimeStep" class="form-control" placeholder="Оставьте пустым для одного кадра" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Извлечь кадры</button>
+</form>
+
+@if (Model.ExtractedFrames?.Count > 0)
+{
+    var i = 0;
+    <h3>Эксперименты группы:</h3>
+    <div class="row">
+        @foreach (var frame in Model.ExtractedFrames)
+        {
+            i++;
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <img src="@frame.FrameUrl" class="card-img-top" />
+                    <h4 class="text-center">Эксперимент @i</h4>
+                    <div class="card-body text-center">
+                        <a class="btn btn-sm btn-primary" href="/Analyze?id=@frame.Id">Анализировать</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+@if ( Model.GroupFrames?.Count > 0)
+{
+    var i = 0;
+    <h3>Эксперименты группы:</h3>
+    <div class="row">
+        @foreach (var frame in Model.GroupFrames)
+        {
+            i++;
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <img src="@frame.FrameUrl" class="card-img-top" />
+                    <h4 class="text-center">Эксперимент @i</h4>
+                    <div class="card-body text-center">
+                        <a class="btn btn-sm btn-primary"
+                           href="/Analyze?id=@frame.Id&groupId=@Model.GroupId">
+                            Анализировать
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+<h3>Вопросы</h3>
+
+<div id="questionBlock" class="mb-3 border p-3 rounded">
+    <p>Оптика. Основные законы геометрической оптики.</p>
+
+    <div id="initialButtonBlock">
+        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
+    </div>
+
+    <div id="answerFormBlock" style="display: none;">
+        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
+        <div>
+            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
+            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
+        </div>
+    </div>
 </div>
+<div id="questionBlock" class="mb-3 border p-3 rounded">
+    <p>Прямолинейное распространение света.</p>
+
+    <div id="initialButtonBlock">
+        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
+    </div>
+
+    <div id="answerFormBlock" style="display: none;">
+        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
+        <div>
+            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
+            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
+        </div>
+    </div>
+</div>
+<div id="questionBlock" class="mb-3 border p-3 rounded">
+    <p>Разрешающая способность оптических приборов.</p>
+
+    <div id="initialButtonBlock">
+        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
+    </div>
+
+    <div id="answerFormBlock" style="display: none;">
+        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
+        <div>
+            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
+            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
+        </div>
+    </div>
+</div>
+<script>
+    function previewVideo(event) {
+        const file = event.target.files[0];
+        const video = document.getElementById('videoPreview');
+        const container = document.getElementById('videoPreviewContainer');
+
+        if (file) {
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            container.style.display = "block";
+        } else {
+            video.src = "";
+            container.style.display = "none";
+        }
+    }
+</script>
+
+<script>
+    function showAnswerInput() {
+        document.getElementById('initialButtonBlock').style.display = 'none';
+        document.getElementById('answerFormBlock').style.display = 'block';
+    }
+
+    function cancelAnswer() {
+        document.getElementById('answerText').value = '';
+        document.getElementById('answerFormBlock').style.display = 'none';
+        document.getElementById('initialButtonBlock').style.display = 'block';
+    }
+
+    function submitAnswer() {
+        const answer = document.getElementById('answerText').value;
+        if (answer.trim() === "") {
+            alert("Пожалуйста, введите ответ.");
+            return;
+        }
+        
+        alert("Ответ отправлен: " + answer);
+        
+        cancelAnswer();
+    }
+</script>
