@@ -1,3 +1,4 @@
+using DiplomaProject.BLL.Services;
 using DiplomaProject.BLL.Services.Interfaces;
 using DiplomaProject.DAL.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -44,6 +45,15 @@ namespace DiplomaProject.Pages
             await HttpContext.SignOutAsync("MyCookieAuth");
             return RedirectToPage("/Auth");
         }
+        [BindProperty]
+        public Question EditedQuestion { get; set; } = new();
+
+        public async Task<IActionResult> OnPostEditAsync()
+        {
+            await _service.UpdateAsync(EditedQuestion);
+            return RedirectToPage();
+        }
+
     }
 
 }

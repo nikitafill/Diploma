@@ -71,53 +71,42 @@
         }
     </div>
 }
-<h3>Вопросы</h3>
+@if (Model.GroupQuestions?.Count > 0)
+{
+    <h3>Вопросы</h3>
+    @foreach (var question in Model.GroupQuestions)
+    {
+        var userAnswer = Model.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
+        <div class="mb-3 border p-3 rounded">
+            <p><strong>Вопрос:</strong> @question.Text</p>
 
-<div id="questionBlock" class="mb-3 border p-3 rounded">
-    <p>Оптика. Основные законы геометрической оптики.</p>
+            @if (userAnswer is not null)
+            {
+                <div class="mt-2 p-2 border bg-light rounded">
+                    <strong>Ваш ответ:</strong>
+                    <p>@userAnswer.Answer</p>
+                </div>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary mb-2" onclick="toggleForm(this)">Ответить</button>
 
-    <div id="initialButtonBlock">
-        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
-    </div>
-
-    <div id="answerFormBlock" style="display: none;">
-        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
-        <div>
-            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
-            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
+                <div class="answerFormBlock" style="display: none;">
+                    <form method="post" asp-page-handler="Add" onsubmit="return confirmSubmit();">
+                        <input type="hidden" name="NewAnswer.QuestionId" value="@question.Id" />
+                        <input type="hidden" name="NewAnswer.ExperimentGroupId" value="@Model.GroupId" />
+                        <textarea name="NewAnswer.Answer" class="form-control mb-2" rows="3" placeholder="Введите ваш ответ..." required></textarea>
+                        <div>
+                            <button type="submit" class="btn btn-success me-2">Подтвердить</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleForm(this)">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            }
         </div>
-    </div>
-</div>
-<div id="questionBlock" class="mb-3 border p-3 rounded">
-    <p>Прямолинейное распространение света.</p>
+    }
+}
 
-    <div id="initialButtonBlock">
-        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
-    </div>
-
-    <div id="answerFormBlock" style="display: none;">
-        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
-        <div>
-            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
-            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
-        </div>
-    </div>
-</div>
-<div id="questionBlock" class="mb-3 border p-3 rounded">
-    <p>Разрешающая способность оптических приборов.</p>
-
-    <div id="initialButtonBlock">
-        <button class="btn btn-primary" onclick="showAnswerInput()">Ответить</button>
-    </div>
-
-    <div id="answerFormBlock" style="display: none;">
-        <textarea class="form-control mb-2" id="answerText" rows="3" placeholder="Введите ваш ответ..."></textarea>
-        <div>
-            <button class="btn btn-success me-2" onclick="submitAnswer()">Подтвердить</button>
-            <button class="btn btn-secondary" onclick="cancelAnswer()">Отмена</button>
-        </div>
-    </div>
-</div>
 <script>
     function previewVideo(event) {
         const file = event.target.files[0];
@@ -134,28 +123,52 @@
         }
     }
 </script>
-
 <script>
-    function showAnswerInput() {
-        document.getElementById('initialButtonBlock').style.display = 'none';
-        document.getElementById('answerFormBlock').style.display = 'block';
+    function toggleForm(button) {
+        const container = button.closest('.mb-3');
+        const formBlock = container.querySelector('.answerFormBlock');
+        const answerBtn = container.querySelector('.btn-primary');
+
+        const isVisible = formBlock.style.display === 'block';
+
+        if (!isVisible) {
+            formBlock.style.display = 'block';
+            answerBtn.style.display = 'none';
+        } else {
+            formBlock.style.display = 'none';
+            answerBtn.style.display = 'inline-block';
+        }
     }
 
-    function cancelAnswer() {
-        document.getElementById('answerText').value = '';
-        document.getElementById('answerFormBlock').style.display = 'none';
-        document.getElementById('initialButtonBlock').style.display = 'block';
+    function confirmSubmit() {
+        return confirm("После подтверждения изменить ответ будет невозможно. Продолжить?");
+    }
+</script>
+
+@{/*<script>
+    function showAnswerInput(button) {
+        const container = button.closest(".mb-3");
+        container.querySelector(".initialButtonBlock").style.display = 'none';
+        container.querySelector(".answerFormBlock").style.display = 'block';
     }
 
-    function submitAnswer() {
-        const answer = document.getElementById('answerText').value;
+    function cancelAnswer(button) {
+        const container = button.closest(".mb-3");
+        container.querySelector("textarea").value = '';
+        container.querySelector(".answerFormBlock").style.display = 'none';
+        container.querySelector(".initialButtonBlock").style.display = 'block';
+    }
+
+    function submitAnswer(button) {
+        const container = button.closest(".mb-3");
+        const answer = container.querySelector("textarea").value;
+
         if (answer.trim() === "") {
             alert("Пожалуйста, введите ответ.");
             return;
         }
-        
+
         alert("Ответ отправлен: " + answer);
-        
-        cancelAnswer();
+        cancelAnswer(button);
     }
-</script>
+</script>*/}

@@ -14,13 +14,20 @@ public class IndexModel : PageModel
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IExperimentService _service;
     private readonly IExperimentGroupService _serviceGroup;
-    public IndexModel(IHttpClientFactory httpClientFactory, IExperimentService service, IExperimentGroupService serviceGroup)
+    private readonly IQuestionService _questionService;
+    private readonly IStudentAnswerService _answerService;
+    public IndexModel(IHttpClientFactory httpClientFactory, 
+                      IExperimentService service, 
+                      IExperimentGroupService serviceGroup, 
+                      IQuestionService questionService,
+                      IStudentAnswerService answerService)
     {
         _httpClientFactory = httpClientFactory;
         _service = service;
         _serviceGroup = serviceGroup;
+        _questionService = questionService;
+        _answerService = answerService;
     }
-
     [BindProperty]
     public IFormFile VideoFile { get; set; }
 
@@ -30,13 +37,15 @@ public class IndexModel : PageModel
     public double StartTime { get; set; } 
 
     [BindProperty]
-    public double? TimeStep { get; set; } 
-
+    public double? TimeStep { get; set; }
+    public List<Question> GroupQuestions { get; set; } = new();
     public List<FrameResponse> ExtractedFrames { get; set; } = new(); 
     [BindProperty(SupportsGet = true)]
     public int GroupId { get; set; }
     public string GroupName { get; set; }
     public List<FrameResponse> GroupFrames { get; set; } = new();
+    public List<(Question question, StudentAnswer answer)> AnsweredQuestions { get; set; } = new();
+    public List<StudentAnswer> Answers { get; set; } = new();
     public async Task<IActionResult> OnGetAsync()
     {
         if (GroupId > 0)
@@ -51,6 +60,17 @@ public class IndexModel : PageModel
                 Id = a.Id,
                 FrameUrl = a.ExtractedFramePath
             }).ToList();
+
+            GroupQuestions = await _questionService.GetRandomQuestionsByGroupAsync(GroupId);
+
+            var allAnswers = await _answerService.GetAnswersByGroupAsync(GroupId);
+            var questionDict = (await _questionService.GetRandomQuestionsByGroupAsync(GroupId)).ToDictionary(q => q.Id);
+
+            AnsweredQuestions = allAnswers
+                .Where(a => !string.IsNullOrWhiteSpace(a.Answer))
+                .Select(a => (questionDict[a.QuestionId], a))
+                .ToList();
+            Answers = await _answerService.GetAnswersByGroupAsync(GroupId);
         }
 
         return Page();
@@ -105,6 +125,14 @@ public class IndexModel : PageModel
         ModelState.AddModelError("", "Ошибка при извлечении кадра(ов).");
         return Page();
     }
+    [BindProperty]
+    public StudentAnswer NewAnswer { get; set; } = new();
+    public async Task<IActionResult> OnPostAddAsync()
+    {
+        await _answerService.AddAsync(NewAnswer);
+        return RedirectToPage(new { GroupId = NewAnswer.ExperimentGroupId });
+    }
+
     public async Task<IActionResult> OnPostLogoutAsync()
     {
         await HttpContext.SignOutAsync("MyCookieAuth");

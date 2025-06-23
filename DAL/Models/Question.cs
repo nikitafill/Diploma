@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DiplomaProject.DAL.Models
 {
@@ -14,6 +15,7 @@ namespace DiplomaProject.DAL.Models
 
         [Required]
         public string Text { get; set; } = string.Empty;
+        public List<ExperimentGroupQuestion> ExperimentGroupQuestions { get; set; } = new();
     }
 
 }

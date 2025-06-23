@@ -43,7 +43,7 @@ namespace DiplomaProject.BLL.Services
         public async Task<User?> AuthenticateAsync(string login, string password)
         {
             var users = await _repository.FindAsync(u => u.Login == login && u.PasswordHash == password);
-            return users.FirstOrDefault(); // вернёт null, если не найдено
+            return users.FirstOrDefault();
         }
     }
 

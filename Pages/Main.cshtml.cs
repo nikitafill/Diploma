@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DiplomaProject.Pages
 {
-    [Authorize(Roles = "Студент,Преподаватель")]
+    //[Authorize(Roles = "Студент,Преподаватель")]
     public class MainModel : PageModel
     {
         private readonly IExperimentGroupService _service;
@@ -24,20 +24,29 @@ namespace DiplomaProject.Pages
         
         public int UserId { get; set; }
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync(int? userId)
         {
-            var userIdClaim = User.FindFirst("UserId");
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            if (userId.HasValue)
             {
-                UserId = userId;
-                Groups = (await _service.GetByUserIdAsync(UserId)).ToList();
+                UserId = userId.Value;
             }
             else
             {
-                
-                RedirectToPage("/Auth");
+                var userIdClaim = User.FindFirst("UserId");
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var authUserId))
+                {
+                    UserId = authUserId;
+                }
+                else
+                {
+                    return RedirectToPage("/Auth");
+                }
             }
+
+            Groups = (await _service.GetByUserIdAsync(UserId)).ToList();
+            return Page();
         }
+
         public async Task<IActionResult> OnPostAddAsync()
         {
             var userIdClaim = User.FindFirst("UserId");

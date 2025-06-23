@@ -132,7 +132,7 @@ namespace DiplomaProject.BLL.Services
             analysis.CentreX = centreX;
             analysis.CentreY = centerY;
             analysis.Radii.Clear();
-            float onPx = 1.0f/ pixelsPerCm;
+            float onPx = 0.18f/ pixelsPerCm;
             
             foreach (var px in radiiPixels)
             {

@@ -7,9 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\processed\**" />
+    <Content Remove="wwwroot\processed\**" />
+    <EmbeddedResource Remove="wwwroot\processed\**" />
+    <None Remove="wwwroot\processed\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\frames\" />
-    <Folder Include="wwwroot\processed\" />
-    <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 
   <ItemGroup>

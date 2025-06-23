@@ -32,7 +32,7 @@
         <input type="hidden" name="Id" value="@Model.Id" />
         <div id="radiiInputsContainer"></div>
         <button type="button" onclick="submitRadii()">Подтвердить</button>
-        <button type="button">Сбросить</button>
+        <button type="button" onclick="resetMeasurements()">Сбросить</button>
     </form>
 }
 else
@@ -112,6 +112,7 @@ else
         });
     </script>
 }
+
 <div style="flex: 1;">
     <canvas id="intensityChart2" style="width: 100%; height: 300px;"></canvas>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -176,11 +177,10 @@ else
         <p><strong>Расчётный радиус кривизны линзы:</strong> @Model.LensRadius.Value.ToString("F10") мм</p>
     }
 }
-@if (Model.Intensities?.Any() == true)
+@if (Model.LensRadius.HasValue)
 {
     <h4>Интенсивности света</h4>
     <div style="display: flex; justify-content: space-between; align-items: stretch; width: 100%;">
-        <!-- Обертка для прокрутки таблицы -->
         <div style="flex: 1; margin-right: 10px; max-height: 300px; overflow-y: auto;">
             <table class="table table-bordered">
                 <thead style="position: sticky; top: 0; background: white; z-index: 1;">
@@ -190,7 +190,7 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @for (int i = 0; i < Model.RadiiJson.Length; i++)  // Убираем ограничение на 5 элементов
+                    @for (int i = 0; i < Model.RadiiJson.Length; i++) 
                     {
                         <tr>
                             <td>@Model.RadiiJson[i].ToString("F3")</td>
@@ -416,6 +416,31 @@ else
             document.getElementById("centreYInput").value = centreY;
             document.getElementById("pixelsPerCmInput").value = pixelsPerCm;
             document.getElementById("radiiForm").submit();
+        }
+        function resetMeasurements() {
+            // Сброс переменных
+            centreX = null;
+            centreY = null;
+            pixelsPerCm = null;
+            scalePoints = [];
+            radiusLines = [];
+
+            // Удалить координаты центра, если отображались
+            const coordsDisplay = document.getElementById("centreCoords");
+            if (coordsDisplay) {
+                coordsDisplay.remove();
+            }
+
+            // Очистить canvas
+            draw();
+
+            // Очистить скрытые input'ы, если пользователь нажал "Сбросить" после попытки отправки
+            document.getElementById("centreXInput").value = "";
+            document.getElementById("centreYInput").value = "";
+            document.getElementById("pixelsPerCmInput").value = "";
+            document.getElementById("radiiInputsContainer").innerHTML = "";
+
+            alert("Измерения сброшены. Начните заново.");
         }
     </script>
 }

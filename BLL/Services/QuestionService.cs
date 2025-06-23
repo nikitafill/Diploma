@@ -38,4 +38,13 @@ public class QuestionService : IQuestionService
             await _repository.SaveChangesAsync();
         }
     }
+    public async Task<List<Question>> GetRandomQuestionsByGroupAsync(int groupId, int count = 3)
+    {
+        var groupQuestions = await _repository.GetQuestionsByGroupAsync(groupId);
+
+        return groupQuestions
+            .OrderBy(q => Guid.NewGuid())
+            .Take(count)
+            .ToList();
+    }
 }

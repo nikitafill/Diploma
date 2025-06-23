@@ -13,5 +13,7 @@ namespace DiplomaProject.DAL.Models
 
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;
+
+        public List<ExperimentGroupQuestion> ExperimentGroupQuestions { get; set; } = new();
     }
 }

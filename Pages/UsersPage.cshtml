@@ -64,10 +64,45 @@
                 <td>@user.Role</td>
                 <td>@user.GroupName</td>
                 <td>
-                    <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Вы уверены, что хотите удалить этого пользователя?');" style= " display: flex; gap: 5px;">
+                    <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Вы уверены, что хотите удалить этого пользователя?');" style="display: inline;">
                         <input type="hidden" name="id" value="@user.Id" />
                         <button class="btn btn-danger btn-sm">Удалить</button>
-                        <button class="btn btn-warning btn-sm">Изменить</button>
+                    </form>
+
+                    <button class="btn btn-warning btn-sm" type="button" onclick="toggleEditForm(@user.Id)">Изменить</button>
+                </td>
+            </tr>
+
+            <tr id="editRow-@user.Id" style="display: none;">
+                <td colspan="7">
+                    <form method="post" asp-page-handler="Edit">
+                        <input type="hidden" name="EditedUser.Id" value="@user.Id" />
+                        <div class="row g-2">
+                            <div class="col">
+                                <input class="form-control" name="EditedUser.Name" value="@user.Name" />
+                            </div>
+                            <div class="col">
+                                <input class="form-control" name="EditedUser.Login" value="@user.Login" />
+                            </div>
+                            <div class="col">
+                                <input class="form-control" name="EditedUser.PasswordHash" value="@user.PasswordHash" />
+                            </div>
+                            <div class="col">
+                                <select class="form-control" name="EditedUser.Role">
+                                    @foreach (var role in Model.Roles)
+                                    {
+                                        <option value="@role" selected="@(role == user.Role)">@role</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col">
+                                <input class="form-control" name="EditedUser.GroupName" value="@user.GroupName" />
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-success btn-sm">Сохранить</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditForm(@user.Id)">Отмена</button>
+                            </div>
+                        </div>
                     </form>
                 </td>
             </tr>
@@ -87,5 +122,12 @@
             form.style.display = "none";
             button.style.display = "inline-block";
         }
+    }
+</script>
+
+<script>
+    function toggleEditForm(userId) {
+        const row = document.getElementById('editRow-' + userId);
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
     }
 </script>

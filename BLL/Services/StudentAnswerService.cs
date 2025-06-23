@@ -39,5 +39,10 @@ namespace DiplomaProject.BLL.Services
                 await _repository.SaveChangesAsync();
             }
         }
+        public async Task<List<StudentAnswer>> GetAnswersByGroupAsync(int groupId)
+        {
+            var answers = await _repository.FindAsync(a => a.ExperimentGroupId == groupId);
+            return answers.ToList();
+        }
     }
 }

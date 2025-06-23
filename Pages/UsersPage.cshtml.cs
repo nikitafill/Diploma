@@ -42,5 +42,13 @@ namespace DiplomaProject.Pages
             await HttpContext.SignOutAsync("MyCookieAuth");
             return RedirectToPage("/Auth");
         }
+        [BindProperty]
+        public User EditedUser { get; set; } = new();
+
+        public async Task<IActionResult> OnPostEditAsync()
+        {
+            await _userService.UpdateAsync(EditedUser);
+            return RedirectToPage();
+        }
     }
 }

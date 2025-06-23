@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RingRadius> RingsRadiuses { get; set; }
     public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
     public DbSet<ExperimentGroup> ExperimentGroups { get; set; }
+    public DbSet<ExperimentGroupQuestion> ExperimentGroupQuestions { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

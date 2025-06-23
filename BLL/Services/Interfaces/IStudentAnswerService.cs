@@ -9,5 +9,6 @@ namespace DiplomaProject.BLL.Services.Interfaces
         Task AddAsync(StudentAnswer question);
         Task UpdateAsync(StudentAnswer question);
         Task DeleteAsync(int id);
+        Task<List<StudentAnswer>> GetAnswersByGroupAsync(int groupId);
     }
 }
